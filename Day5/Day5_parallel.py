@@ -1,7 +1,9 @@
 import sys
 import re
 import datetime
+import multiprocessing as mp
 import time
+
 
 class Mapper:
     def __init__(self):
@@ -67,15 +69,28 @@ def part1():
     print(f"The lowest value is: {min(locations)}")
 
 
-def part2():
+def part2(mapper, seed_range):
+    temp_location = sys.maxsize
+    print(f"Starting seed range {seed_range[0]} to {seed_range[0] + seed_range[1]}")
+    for seed in range(seed_range[0], seed_range[0] + seed_range[1]):
+        destination = mapper.get_destination(seed, "seed")
+        if destination < temp_location:
+            temp_location = destination
+        # print(f"{((seed-seed_range[0])/seed_range[1]):.2%}", end="\r")
+    print(f"Completed with seed range {seed_range[0]} to {seed_range[0] + seed_range[1]}")
+    return temp_location
+
+
+if __name__ == '__main__':
+    start_time = time.perf_counter()
     # open file, get the list of seeds, then proceed until the ext non-empty line
-    file = open("sample.txt")
+    file = open("input.txt")
     line = file.readline()
     seed_raw = list(map(int, re.findall(number_finder, line)))
 
     seed_list = []
-    for ii in range(int(len(seed_raw)/2)):
-        seed_list.append([seed_raw[2*ii], seed_raw[2*ii+1]])
+    for ii in range(int(len(seed_raw) / 2)):
+        seed_list.append([seed_raw[2 * ii], seed_raw[2 * ii + 1]])
 
     mapper = Mapper()
 
@@ -98,23 +113,14 @@ def part2():
             mapper.add_map(source_name, destination_name, ranges)
         line = file.readline()
 
-    locations = []
-    for idx, seed_range in enumerate(seed_list):
-        temp_locations = []
-        print(f"Testing seed range {idx} of {len(seed_list)} from {seed_range[0]} to {seed_range[0]+seed_range[1]}")
-        now = datetime.datetime.now()
-        print("Section start time: ", now)
-        for seed in range(seed_range[0], seed_range[0] + seed_range[1]):
-            temp_locations.append(mapper.get_destination(seed, "seed"))
-            #print(f"Seed: {seed}, \tLocation: {locations[-1]}")
-            print(f"{(seed-seed_range[0]):10d} of {(seed_range[1]):10d}, {((seed-seed_range[0])/seed_range[1]):.2%}", end="\r")
-        locations.append(min(temp_locations))
+    pool = mp.Pool(10)
 
-    print(f"The lowest value is: {min(locations)}")
+    processes = [pool.apply_async(part2, args=(mapper, x)) for x in seed_list]
 
+    result = [p.get() for p in processes]
 
-if __name__ == '__main__':
-    start_time = time.perf_counter()
-    part2()
+    print(result)
+
+    print(f"The lowest value is: {min(result)}")
     finish_time = time.perf_counter()
     print(f"Program finished in {finish_time-start_time} seconds")
