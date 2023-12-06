@@ -5,6 +5,16 @@ import multiprocessing as mp
 import time
 
 
+def customrange(start, stop, step):
+    current = start
+    while True:
+        if current < stop:
+            yield current
+            current += step
+        else:
+            yield stop
+            return
+
 class Mapper:
     def __init__(self):
         self.maps = []
@@ -92,6 +102,14 @@ if __name__ == '__main__':
     for ii in range(int(len(seed_raw) / 2)):
         seed_list.append([seed_raw[2 * ii], seed_raw[2 * ii + 1]])
 
+    smaller_seed_list = []
+    for seed in seed_list:
+        for ii in customrange(seed[0], seed[0]+seed[1], 500000):
+            if ii + 500000 <= seed[0]+seed[1]:
+                print([ii, 500000])
+            else:
+                print([ii, seed[0]+seed[1] - ii])
+
     mapper = Mapper()
 
     while line:
@@ -124,3 +142,6 @@ if __name__ == '__main__':
     print(f"The lowest value is: {min(result)}")
     finish_time = time.perf_counter()
     print(f"Program finished in {finish_time-start_time} seconds")
+
+# this took 18555.7448414 sec just chunking through before i tried again by breaking the seed ranges into smaller chunks to keep all of the cores active
+# the smaller chunks one took 7273.606113399997 seconds. I love brute force send tweet
